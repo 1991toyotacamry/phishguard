@@ -111,6 +111,11 @@ def _domain_age_days(domain: str) -> int | None:
     return age if age >= 0 else None
 
 
+def _normalize_homoglyphs(text: str) -> str:
+    table = str.maketrans({"0": "o", "1": "l", "3": "e", "5": "s", "@": "a", "$": "s"})
+    return text.translate(table)
+
+
 def _brand_impersonation(
     hostname: str, domain: str | None
 ) -> tuple[bool, str | None]:
@@ -122,6 +127,7 @@ def _brand_impersonation(
     domain_labels = domain.split(".")
     subdomain_labels = labels[: -len(domain_labels)]
     registered_label = domain_labels[0].replace("-", "")
+    norm_registered_label = _normalize_homoglyphs(registered_label)
 
     for brand, official_domain in BRAND_DOMAINS.items():
         official_label = official_domain.split(".")[0]
@@ -129,7 +135,7 @@ def _brand_impersonation(
         is_official_domain = domain == official_domain
 
         if not is_official_domain and any(
-            brand_label in label.replace("-", "") for label in subdomain_labels
+            brand_label in _normalize_homoglyphs(label.replace("-", "")) for label in subdomain_labels
         ):
             return True, brand
 
@@ -137,15 +143,19 @@ def _brand_impersonation(
             continue
 
         tokens = domain_labels[0].lower().split("-")
+        norm_tokens = [_normalize_homoglyphs(t) for t in tokens]
         similarity = SequenceMatcher(
             None, registered_label.lower(), brand_label.lower()
         ).ratio()
+        norm_similarity = SequenceMatcher(
+            None, norm_registered_label.lower(), brand_label.lower()
+        ).ratio()
         suspicious_combination = (
-            brand_label in registered_label.lower()
-            and any(term in tokens for term in _AUTH_TERMS)
+            (brand_label in registered_label.lower() or brand_label in norm_registered_label.lower())
+            and any(term in tokens or term in norm_tokens for term in _AUTH_TERMS)
         )
-        brand_plus_other_word = brand_label in tokens and len(tokens) > 1
-        if similarity >= 0.82 or suspicious_combination or brand_plus_other_word:
+        brand_plus_other_word = (brand_label in tokens or brand_label in norm_tokens) and len(tokens) > 1
+        if similarity >= 0.82 or norm_similarity >= 0.82 or suspicious_combination or brand_plus_other_word:
             return True, brand
 
     return False, None

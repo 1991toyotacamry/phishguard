@@ -19,7 +19,8 @@ _EXECUTIVE_PATTERN = re.compile(
 )
 _COMPANY_PATTERN = re.compile(
     r"\b(microsoft|google|apple|amazon|paypal|meta|netflix|"
-    r"adobe|docusign|dropbox|salesforce|oracle|linkedin)\b",
+    r"adobe|docusign|dropbox|salesforce|oracle|linkedin|"
+    r"okta|duo|crowdstrike|workday|it service desk|it support|identity team|cyber defense)\b",
     re.IGNORECASE,
 )
 _CONSUMER_EMAIL_DOMAINS = {

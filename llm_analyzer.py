@@ -296,7 +296,20 @@ def _deterministic_fallback_engine(
         social_engineering.append("Pretexting & Confidentiality Coercion")
         social_engineering.append("Financial Wire Fraud")
 
-    # 4. Benign Enterprise Markers
+    # 4. Credential Harvesting & Account Revocation Heuristics
+    cred_triggers = [
+        "unauthorized login", "password expiration", "re-authentication",
+        "account queued for termination", "account suspension", "action required immediately",
+        "within 2 hours", "revocation", "verify your identity", "reset-password", "auth-reset",
+        "security action required", "identity token migration"
+    ]
+    cred_hit = any(term in content_lower for term in cred_triggers)
+    if cred_hit:
+        semantic_modifier += 25
+        social_engineering.append("Credential Harvesting & Account Suspension Coercion")
+        social_engineering.append("Urgent Temporal Pressure & False IT Authority")
+
+    # 5. Benign Enterprise Markers
     benign_triggers = ["annual open benefits", "open enrollment", "401(k)", "workday via okta", "benefits enrollment window"]
     benign_hit = any(term in content_lower for term in benign_triggers)
     is_clean_auth = (
@@ -305,7 +318,8 @@ def _deterministic_fallback_engine(
         not display_mismatch and
         not is_qr_vector and
         not bec_hit and
-        not quishing_hit
+        not quishing_hit and
+        not cred_hit
     )
 
     if benign_hit and is_clean_auth:
